@@ -8,93 +8,110 @@ import { GoalImpact, SimulateImpactResponse } from '../../models/models';
 @Component({
   standalone: true,
   imports: [CommonModule, FormsModule],
-  styles: [`
-    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; }
-    .result-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; margin-top: 12px; }
-    .metric-card { border: 1px solid #dde3ef; border-radius: 10px; padding: 12px; background: #fbfcff; }
-    .metric-card h3 { margin: 0 0 8px; font-size: 15px; }
-    .metric-line { display: flex; justify-content: space-between; margin: 4px 0; }
-    .helper { font-size: 13px; color: #546278; margin: 6px 0; }
-    .alert { border: 1px solid #f0d9a8; background: #fff8e8; border-radius: 8px; padding: 10px; margin-top: 8px; }
-    .goals { margin-top: 12px; }
-    .goals ul { margin: 6px 0 0 16px; }
-  `],
-  template: `<div class='card'>
-    <h2>Simulador de impacto</h2>
+  template: `<section class='page-card'>
+    <header class='page-header'>
+      <h2>Simulador</h2>
+      <p>Simule um gasto hoje e veja o impacto no saldo e nas metas dentro do período.</p>
+    </header>
 
-    <form (ngSubmit)='simulate()'>
-      <div class='form-grid'>
-        <label>Valor
+    <form class='section grid two' (ngSubmit)='simulate()'>
+      <div class='field'>
+        <label>Valor</label>
+        <div class='currency-input'>
+          <span>R$</span>
           <input [(ngModel)]='amount' name='amount' type='number' min='0.01' step='0.01' placeholder='300' required>
-        </label>
-        <label>Data da transação
-          <input [(ngModel)]='date' name='date' type='date' required>
-        </label>
-        <label>Período - de
-          <input [(ngModel)]='from' name='from' type='date' required>
-        </label>
-        <label>Período - até
-          <input [(ngModel)]='to' name='to' type='date' required>
-        </label>
-        <label>AccountId (opcional)
-          <input [(ngModel)]='accountId' name='accountId' placeholder='GUID opcional'>
-        </label>
+        </div>
       </div>
 
-      <button type='submit' [disabled]='loading'>{{ loading ? 'Simulando...' : 'Simular' }}</button>
-      <p class='helper'>Tipo enviado: <strong>EXPENSE</strong>.</p>
+      <div class='field'>
+        <label>Data da transação</label>
+        <input [(ngModel)]='date' name='date' type='date' required>
+      </div>
+
+      <div class='field'>
+        <label>Período (de)</label>
+        <input [(ngModel)]='from' name='from' type='date' required>
+      </div>
+
+      <div class='field'>
+        <label>Período (até)</label>
+        <input [(ngModel)]='to' name='to' type='date' required>
+      </div>
+
+      <div class='field'>
+        <label>AccountId (opcional)</label>
+        <input [(ngModel)]='accountId' name='accountId' placeholder='GUID da conta'>
+        <p class='helper-text'>Use somente se quiser atrelar a simulação a uma conta específica.</p>
+      </div>
+
+      <div class='field'>
+        <label>Tipo</label>
+        <input value='EXPENSE' disabled>
+      </div>
+
+      <div>
+        <button class='btn btn-primary' type='submit' [disabled]='loading'>{{ loading ? 'Simulando...' : 'Simular' }}</button>
+      </div>
     </form>
 
-    <p *ngIf='loading'>Carregando simulação...</p>
-    <p *ngIf='errorMessage' class='alert'>{{ errorMessage }}</p>
-    <p *ngIf='!loading && !result && !errorMessage'>Faça uma simulação para ver o impacto.</p>
+    <p *ngIf='loading' class='empty-state'>Calculando impacto...</p>
+    <p *ngIf='errorMessage' class='alert warning'>{{ errorMessage }}</p>
+    <p *ngIf='!loading && !result && !errorMessage' class='empty-state'>Faça uma simulação para ver o impacto.</p>
 
     <ng-container *ngIf='result'>
-      <div class='result-grid'>
-        <div class='metric-card'>
+      <div class='metrics'>
+        <article class='metric-card'>
           <h3>Saldo mínimo</h3>
           <div class='metric-line'><span>Baseline</span><strong>{{ formatCurrency(result.baselineMetrics.minBalance) }}</strong></div>
           <div class='metric-line'><span>Simulado</span><strong>{{ formatCurrency(result.simulatedMetrics.minBalance) }}</strong></div>
-          <div class='metric-line'><span>Δ</span><strong>{{ formatDeltaCurrency(result.minBalanceDelta) }}</strong></div>
-          <small>{{ improvementLabel(result.minBalanceDelta) }}</small>
-        </div>
+          <div class='metric-line'><span>Delta</span><strong>{{ formatDeltaCurrency(result.minBalanceDelta) }}</strong></div>
+          <span class='badge' [class.good]='result.minBalanceDelta >= 0' [class.bad]='result.minBalanceDelta < 0'>{{ improvementLabel(result.minBalanceDelta) }}</span>
+        </article>
 
-        <div class='metric-card'>
+        <article class='metric-card'>
           <h3>Dias no negativo</h3>
           <div class='metric-line'><span>Baseline</span><strong>{{ formatDays(result.baselineMetrics.negativeDays) }}</strong></div>
           <div class='metric-line'><span>Simulado</span><strong>{{ formatDays(result.simulatedMetrics.negativeDays) }}</strong></div>
-          <div class='metric-line'><span>Δ</span><strong>{{ formatDeltaNumber(negativeDaysDelta) }}</strong></div>
-          <small>{{ negativeDaysDelta <= 0 ? 'melhora' : 'piora' }}</small>
-        </div>
+          <div class='metric-line'><span>Delta</span><strong>{{ formatDeltaNumber(negativeDaysDelta) }}</strong></div>
+          <span class='badge' [class.good]='negativeDaysDelta <= 0' [class.bad]='negativeDaysDelta > 0'>{{ negativeDaysDelta <= 0 ? 'melhora' : 'piora' }}</span>
+        </article>
 
-        <div class='metric-card'>
+        <article class='metric-card'>
           <h3>Saldo final</h3>
           <div class='metric-line'><span>Baseline</span><strong>{{ formatCurrency(result.baselineMetrics.finalBalance) }}</strong></div>
           <div class='metric-line'><span>Simulado</span><strong>{{ formatCurrency(result.simulatedMetrics.finalBalance) }}</strong></div>
-          <div class='metric-line'><span>Δ</span><strong>{{ formatDeltaCurrency(finalBalanceDelta) }}</strong></div>
-          <small>{{ improvementLabel(finalBalanceDelta) }}</small>
-        </div>
+          <div class='metric-line'><span>Delta</span><strong>{{ formatDeltaCurrency(finalBalanceDelta) }}</strong></div>
+          <span class='badge' [class.good]='finalBalanceDelta >= 0' [class.bad]='finalBalanceDelta < 0'>{{ improvementLabel(finalBalanceDelta) }}</span>
+        </article>
       </div>
 
-      <div *ngIf='result.enteredNegativeAfterSimulation' class='alert'>
+      <div *ngIf='result.enteredNegativeAfterSimulation' class='alert danger'>
         Essa simulação faz você entrar no negativo no período.
       </div>
 
-      <div *ngIf='negativeDaysDelta > 0' class='alert'>
+      <div *ngIf='negativeDaysDelta > 0' class='alert warning'>
         Aumentou {{ negativeDaysDelta }} dias negativos.
       </div>
 
-      <div class='goals'>
-        <h3>Metas atingidas no período</h3>
-        <ul *ngIf='hitGoals.length > 0'>
-          <li *ngFor='let goal of hitGoals'>
-            {{ goal.goalName }} (estimada: {{ goal.estimatedHitDate || 'sem data' }})
-          </li>
-        </ul>
-        <p *ngIf='hitGoals.length === 0'>Nenhuma meta atingida.</p>
-      </div>
+      <section class='list-card section'>
+        <div class='row'>
+          <div class='row-title'>Metas no período</div>
+        </div>
+        <ng-container *ngIf='hitGoals.length > 0'>
+          <div class='row' [style.grid-template-columns]="'1fr auto'" *ngFor='let goal of hitGoals'>
+            <div>
+              <div class='row-title'>{{ goal.goalName }}</div>
+              <div class='row-subtitle'>Estimada em: {{ goal.estimatedHitDate || 'sem data' }}</div>
+            </div>
+            <div class='row-value'><span class='badge good'>ATINGIDA</span></div>
+          </div>
+        </ng-container>
+        <div class='row' *ngIf='hitGoals.length === 0'>
+          <div class='row-subtitle'>Nenhuma meta atingida.</div>
+        </div>
+      </section>
     </ng-container>
-  </div>`
+  </section>`
 })
 export class SimulatorPageComponent {
   private service = inject(ForecastService);
