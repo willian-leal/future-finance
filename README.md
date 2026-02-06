@@ -124,11 +124,18 @@ Projeção:
 curl "http://localhost:5000/api/forecast?from=2026-01-01&to=2026-12-31"
 ```
 
-Simulação:
+Simulação (body direto, sem wrapper `request`; `type` aceita string ou número):
 ```bash
 curl -X POST "http://localhost:5000/api/simulate?from=2026-01-01&to=2026-12-31" \
   -H "Content-Type: application/json" \
-  -d '{"amount":300,"date":"2026-01-15","type":"Expense"}'
+  -d '{"amount":300,"date":"2026-01-15","type":"EXPENSE"}'
+```
+
+Exemplo com enum numérico:
+```bash
+curl -X POST "http://localhost:5000/api/simulate" \
+  -H "Content-Type: application/json" \
+  -d '{"amount":300,"date":"2026-01-15","type":2}'
 ```
 
 ## Notas de segurança e evolução

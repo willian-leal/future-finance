@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using FutureFinance.Api.Data;
 using FutureFinance.Api.Extensions;
 using FutureFinance.Api.Middleware;
@@ -7,7 +8,11 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 

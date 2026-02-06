@@ -18,5 +18,8 @@ export class SimulatorPageComponent {
   amount = 0;
   date = new Date().toISOString().slice(0,10);
   result?: SimulateImpactResponse;
-  simulate() { this.service.simulate({ amount: this.amount, date: this.date, type: 'Expense' }).subscribe(v => this.result = v); }
+
+  simulate() {
+    this.service.simulate({ amount: this.amount, date: this.date, type: 'EXPENSE' }).subscribe(v => this.result = v);
+  }
 }

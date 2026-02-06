@@ -18,7 +18,7 @@ public class ForecastController(IForecastService forecastService) : ControllerBa
     }
 
     [HttpPost("simulate")]
-    public async Task<ActionResult<SimulateImpactResponse>> Simulate(SimulateRequest request, [FromQuery] DateOnly? from, [FromQuery] DateOnly? to, CancellationToken ct)
+    public async Task<ActionResult<SimulateImpactResponse>> Simulate([FromBody] SimulateRequest request, [FromQuery] DateOnly? from, [FromQuery] DateOnly? to, CancellationToken ct)
     {
         var start = from ?? DateOnly.FromDateTime(DateTime.UtcNow);
         var end = to ?? start.AddDays(365);
